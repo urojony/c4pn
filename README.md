@@ -14,4 +14,4 @@ The project contains two files:
 
 ### How to run
 
-Download the source code and compile it with GNU g++ compiler. Program will create several files with strategies for Builder `C4P{n}_in_{e}_moves_{v}_verts.txt` (it will overwrite files if they previously existed).
+Download the source code and compile it with GNU C++ compiler. Program will create several files with strategies for Builder `C4P{n}_in_{e}_moves_{v}_verts.txt` (it will overwrite files if they previously existed).
