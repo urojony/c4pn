@@ -1,9 +1,17 @@
 # $\tilde{r}(C_4, P_n)$
-Program that finds upper bound for online Ramsey numbers $\tilde{r} (C_4, P_n)$ for small values of n.
+Program that finds upper bounds for online Ramsey numbers $\tilde{r} (C_4, P_n)$ for small values of n.
 
-More precisely, for given values of $n[1..n],v[1..n],e[1..n],H[1..m]$, it finds the values of 
-$rc(C_4,P_{n[i]},H[j],v[i],e[i])$ defined in the following paper in Section 4.
+Detailed information about this program are presented in the following paper in Section 4 and Appendix A.
 
 https://arxiv.org/abs/2211.12204
 
+### Contents
 
+The project contains two files:
+
+- c4pn.cpp - source code,
+- builderstrategies.zip - generated output.
+
+### How to run
+
+Download the source code and compile it with GNU g++ compiler. Program will create several files with strategies for Builder `C4P{n}_in_{e}_moves_{v}_verts.txt` (it will overwrite files if they previously existed).
