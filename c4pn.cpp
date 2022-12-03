@@ -50,7 +50,7 @@ struct Graph{
 
 #define ST first
 #define ND second
-///macros for iterating a bitset for intervals [0,end) or (beg,end)
+///macros for iterating a bitset for intervals [0,end) or [beg,end)
 #define FOR2(i,bset,end)\
 for(int i=(bset)._Find_first();i<(end);i=(bset)._Find_next(i))
 #define FOR3(i,bset,beg,end)\
