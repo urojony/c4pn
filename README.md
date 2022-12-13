@@ -18,5 +18,6 @@ Download the source code and compile it with GNU C++ compiler (requires C++11 or
 
 The program was tested on GCC 12.2.0 and the following commands were used.
 
-`g++ -Wall -O2 -std=gnu++11  -c c4pn.cpp -o c4pn.o
-g++  -o c4pn c4pn.o  -s  `
+`g++ -Wall -O2 -std=gnu++20  -c c4pn.cpp -o c4pn.o`
+
+`g++  -o c4pn c4pn.o  -s`
