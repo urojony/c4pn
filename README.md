@@ -15,3 +15,7 @@ The project contains two files:
 ### How to run
 
 Download the source code and compile it with GNU C++ compiler (requires C++11 or newer). Program will create several files with strategies for Builder `C4P{n}_in_{e}_moves_{v}_verts.txt` (it will overwrite files if they previously existed).
+
+The program was tested on GCC 12.2.0 and the following commands were used.
+`g++ -Wall -O2 -std=gnu++11  -c c4pn.cpp -o c4pn.o
+g++  -o c4pn c4pn.o  -s  `
