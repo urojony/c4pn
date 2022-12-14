@@ -10,7 +10,7 @@ https://arxiv.org/abs/2211.12204
 The project contains two files:
 
 - c4pn.cpp - source code,
-- builderstrategies.zip - generated output.
+- BuilderStrategies.zip - generated output.
 
 ### How to run
 
