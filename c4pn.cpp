@@ -11,7 +11,7 @@
 using namespace std;
 ///Tmax - number of considered games
 ///T2max - number of considered starting positions in each game
-constexpr int T_MAX=12,T2_MAX=6;
+constexpr int T_MAX=12,T2_MAX=9;
 ///Parameters of considered games - the T-th game
 ///is played on V[T] vertices, the goal for the builder is to build
 ///a red C4 or a blue path of length N[T] in E[T] moves.
@@ -31,8 +31,16 @@ typedef bitset<V_MAX_SQ> matrix;
 ///if a position is not possible in a given game, it will be ignored
 ///for example if V[0]=4 (so the set of vertices={0,1,2,3}) then all
 ///positions in the 0-th game which contains a vertex 4 will be ignored
-const vector<int> RED_EDGES[] {{},{},{1,2},{1,2,2,3},{1,2},{1,2,2,3}},
-BLUE_EDGES[] {{},{0,1},{0,1},{0,1},{0,1,2,3},{0,1,3,4}};
+char NAMES[T2_MAX][20]=
+   {"empty","b-path","br-path","brr-path","brb-path",
+   "d-multipath","dr-multipath","drr-multipath","drb-multipath"};
+const vector<int> RED_EDGES[]
+   {{},{},   {1,2},{1,2,2,3},{1,2},
+   {0,1},{0,1,1,2},{0,1,1,2,2,3},{0,1,1,2}},
+BLUE_EDGES[]
+   {{},{0,1},{0,1},{0,1},    {0,1,2,3},
+   {0,1},{0,1},    {0,1},        {0,1,2,3}};
+
 #define ST first
 #define ND second
 
@@ -114,18 +122,19 @@ matrix sortAndMerge
    return (blueG&LOWER_MASK) | (redG&UPPER_MASK);
 }
 bool isPnPath(matrix graph){
-///if there is an exactly one path of length Nt[T] and
-///no other edges, returns 1,
-///if there is no path of length Nt[T], returns 0,
-///otherwise it can return any value
-   //return 1; ///if Vt[T]==Nt[T]+1, it should always return 1 when invoked
-   int i,j,k,len=0;
-   for(i=0;i<V[T];++i)
-      if(degree(graph,i)==1)
-         break;
-   if(i==V[T])
+///returns true iff graph is a P_N[T] path
+   //return 1; ///if V[T]==N[T]+1, it should always return 1 when invoked
+   if((int)graph.count()!=2*N[T]-2) ///check if number of edges equals N[T]-1
       return 0;
-   for(j=i;;){
+   int i,j,k,leaf=-1,len=0;
+   for(i=0;i<V[T];++i) ///find a leaf and check if all degrees are <=2
+      if(degree(graph,i)==1)
+         leaf=i;
+      else if(degree(graph,i)>2)
+         return 0;
+   if(leaf==-1)
+      return 0;
+   for(j=leaf;;){ ///start from the leaf, walk and burn edges
       k=graph._Find_next(j*V_MAX-1)-j*V_MAX;
       if(k>=V_MAX)
          break;
@@ -137,12 +146,15 @@ bool isPnPath(matrix graph){
 }
 bool hasC4(Graph& graph,int i,int j){
 ///checks if graph has a C4 cycle which contains i-j edge
-   if(graph.e<3)
+   if(graph.e<4)
       return 0;
    auto graph2=graph.m&ROW_MASKS[i];
    ///macro for iterating a bitset over interval [beg,end)
    #define FOR_BS(i,bset,beg,end)\
    for(int i=(bset)._Find_next((beg)-1);i<end;i=(bset)._Find_next(i))
+   ///for any j's neighbour x, different from i, check if x and i
+   ///have more than one common neighbour;
+   ///in this implementation, k=x+j*V_MAX
    FOR_BS(k,graph.m,j*V_MAX,j*V_MAX+i){
       if(((graph2>>((i-k+j*V_MAX)*V_MAX))&graph.m).count()>1)
          return 1;
@@ -164,6 +176,7 @@ bool hasOnlyPaths(matrix graph,int v1,int v2){
       return 1;
    }
    for(j=v1;;){
+   ///find the other end of the path starting with v1
       k=graph._Find_next(j*V_MAX-1)-j*V_MAX;
       if(k>=V_MAX)
          break;
@@ -180,10 +193,10 @@ bool construct(Graph blueG,Graph redG,int v){
       return 0;
    int invOrder[v+3];
    pair<int,int> order[v+3];
-   auto sPos=sortAndMerge(blueG.m,redG.m,v,invOrder,order);
+   auto position=sortAndMerge(blueG.m,redG.m,v,invOrder,order);
    ++NUM_OF_ALL_POS;
-   if(ANAL_POS[T].count(sPos))
-      return ANAL_POS[T][sPos];
+   if(ANAL_POS[T].count(position)) ///if isomorphic position was reached
+      return ANAL_POS[T][position]; ///return the result
    ++NUM_OF_UNIQ_POS;
    if((NUM_OF_UNIQ_POS&((1<<23)-1))==0)
       printf("Unique positions analysed so far: %d\n",NUM_OF_UNIQ_POS);
@@ -191,46 +204,48 @@ bool construct(Graph blueG,Graph redG,int v){
       return 0;
    order[v].ND=v;
    order[v+1].ND=v+1;
-   matrix checked=blueG.m|redG.m;
-   if(T>0 && ANAL_POS[T-1].count(sPos) && ANAL_POS[T-1][sPos]){
+   matrix allEdges=blueG.m|redG.m; ///union of blue and red graphs
+   if(T>0 && ANAL_POS[T-1].count(position) && ANAL_POS[T-1][position]){
    ///checks if in the previous game this position was reached
-      int moove=ANAL_POS[T-1][sPos];
+      int moove=ANAL_POS[T-1][position];
       int v1=order[moove>>8].ND,v2=order[moove&255].ND;
       if(colour(blueG,redG,max({v,v1+1,v2+1}),v1,v2)){
       ///try to play the same move
-         ANAL_POS[T][sPos]=moove;
+         ANAL_POS[T][position]=moove;
          return 1;
       }
       else
-         checked[v1*V_MAX+v2]=checked[v2*V_MAX+v1]=1;
+         allEdges[v1*V_MAX+v2]=allEdges[v2*V_MAX+v1]=1;
    }
    ///try moves with vertices that already have edges
    for(int i=v-1;i>=0;--i)
       if(blueG.degree(i)<=1)
          for(int j=v-1;j>i;--j)
-            if(!checked[i*V_MAX+j] && blueG.degree(j)<=1){
+            if(!allEdges[i*V_MAX+j] && blueG.degree(j)<=1){
                if(colour(blueG,redG,v,i,j)){
-                  ANAL_POS[T][sPos]=(invOrder[i]<<8)+invOrder[j];
+                  ANAL_POS[T][position]=(invOrder[i]<<8)+invOrder[j];
                   return 1;
                }
                else
-                  checked[i*V_MAX+j]=checked[j*V_MAX+i]=1;
+                  allEdges[i*V_MAX+j]=allEdges[j*V_MAX+i]=1;
             }
    ///try moves with an unused vertice
    if(v<V[T])
       for(int i=0;i<v;++i){
-         if(blueG.degree(i)<=1&& !checked[i*V_MAX+v]
+         if(blueG.degree(i)<=1&& !allEdges[i*V_MAX+v]
          && colour(blueG,redG,v+1,i,v)){
-            ANAL_POS[T][sPos]=(invOrder[i]<<8)+v;
+            ANAL_POS[T][position]=(invOrder[i]<<8)+v;
             return 1;
          }
       }
    ///the first move has two unused vertices
    if(v==0 && colour(blueG,redG,v+2,v,v+1)){
-      ANAL_POS[T][sPos]=(v<<8)+v+1;
+      ANAL_POS[T][position]=(v<<8)+v+1;
       return 1;
    }
-   ANAL_POS[T][sPos]=0;
+   ///if no move is winning for Builder, mark
+   ///this position as losing for him
+   ANAL_POS[T][position]=0;
    return 0;
 }
 void print(const matrix& mergedG,int moove){
@@ -294,45 +309,87 @@ bool colour(Graph blueG,Graph redG,int v,int i,int j){
 unordered_map<matrix,int> BOOK_POS;
 int LINE_NUMBER;
 void printBook(Graph blueG,Graph redG,int v,int e,FILE *fp){
+///this function is only invoked when Builder
+///has a winning strategy in RRC(C_4,P_N[T],H,V[T],E[T])
+///where H is represented by blueG and redG;
+///it boths verifies a strategy for Builder and
+///prints it to a file;
+///however, it is only verified whether r_H(C_4,P_N[T])<=E[T],
+///so for example connectivity condition is not checked here
    int invOrder[v+3];
    pair<int,int> order[v+3];
-   auto sPos=sortAndMerge(blueG.m,redG.m,v,invOrder,order);
+   auto position=sortAndMerge(blueG.m,redG.m,v,invOrder,order);
    order[v].ND=v;
    order[v+1].ND=v+1;
-   if(!ANAL_POS[T].count(sPos)){
+   if(!ANAL_POS[T].count(position)){
+   ///this if statement is for a case, when the function
+   ///can't find a given position among analysed positions;
+   ///it doesn't mean it wasn't analysed, but rather
+   ///the isomorphic position was reached
+   ///and now this function can't find it
       construct(blueG,redG,v);
    }
-   int i,j,moove;
-   moove=ANAL_POS[T][sPos];
+   int u,w,moove;
+   moove=ANAL_POS[T][position];
    if(moove==0){
+   ///if ANAL_POS database says that this position is losing or
+   ///maximum number of moves has been reached
       printf("Can't find winning strategy for Builder\n");
       exit(2137); ///this shouldn't happen
    }
-   i=moove/256;
-   j=moove%256;
-   i=order[i].ND;
-   j=order[j].ND;
+   u=moove/256;
+   w=moove%256;
+   u=order[u].ND;
+   w=order[w].ND;
+   ///at this point move u-w is chosen for Builder
+   if(max(u,w)>v && v>0){
+   ///if new edge is isolated and it's not first
+      printf("Connectivity condition failed\n");
+      exit(420);
+   }
+   if(e>=E[T]){
+      printf("Maximum number of moves has been reached\n");
+      exit(57);
+   }
+   if(max(u,w)>=V[T]){
+      printf("Too many vertices are used in the game\n");
+      exit(42);
+   }
+   if(u==w){
+      printf("Loops are not allowed\n");
+      exit(934);
+   }
+   if(u<0 || w<0){
+      printf("Invalid vertices\n");
+      exit(0xEEEEEE);
+   }
    for(int h=0;h<e;++h)
       fprintf(fp," ");
-   print(blueG.m,redG.m,i*256+j,fp,0);
-   if(BOOK_POS.count(sPos)){
-      fprintf(fp," l: %d\n",BOOK_POS[sPos]);
+   print(blueG.m,redG.m,u*256+w,fp,0);
+   if(BOOK_POS.count(position)){
+   ///if the isomorphic position was reached in this file
+   ///print the line number and
+   ///stop going down the decision tree
+      fprintf(fp," l: %d\n",BOOK_POS[position]);
       ++LINE_NUMBER;
       return;
    }
    else{
       fprintf(fp,"\n");
-      BOOK_POS[sPos]=++LINE_NUMBER;
+      BOOK_POS[position]=++LINE_NUMBER;
    }
-   blueG.addEdge(i,j);
+   ///analyze the decsion subtree where Painter colours the edge blue
+   blueG.addEdge(u,w);
    if(!isPnPath(blueG.m))
-      printBook(blueG,redG,max({v,i+1,j+1}),e+1,fp);
-   blueG.removeEdge(i,j);
-   redG.addEdge(i,j);
-   if(!hasC4(redG,i,j))
-      printBook(blueG,redG,max({v,i+1,j+1}),e+1,fp);
+      printBook(blueG,redG,max({v,u+1,w+1}),e+1,fp);
+   blueG.removeEdge(u,w);
+   ///analyze the decision subtree where Painter colours the edge red
+   redG.addEdge(u,w);
+   if(!hasC4(redG,u,w))
+      printBook(blueG,redG,max({v,u+1,w+1}),e+1,fp);
 }
 int fillGraph(Graph& blueG,Graph& redG,const int t2){
+///puts t2-th starting position into blueG and redG
    blueG.clear();
    redG.clear();
    for(int i=1;i<(int)BLUE_EDGES[t2].size();i+=2)
@@ -353,17 +410,16 @@ int main(){
       BOOK_POS.clear();
       LINE_NUMBER=0;
       char filename[100];
-      char names[6][20]={"empty","b-path","br-path",
-      "brr-path","brb-path","brrb-path"};
       sprintf(filename,"C4P%d_in_%d_moves_%d_verts.txt",N[T],E[T],V[T]);
       fp=fopen(filename,"w");
       for(int t2=0;t2<T2_MAX;++t2){
+      ///iterates through every of the 9 starting positions
          int mxVertexIndex=fillGraph(blueG,redG,t2);
          if(mxVertexIndex>=V[T])
             continue;
          int result=construct(blueG,redG,mxVertexIndex+1);
-         fprintf(fp,"rc(C4,P%d,%s,%d,%d)=%d\n",N[T],names[t2],V[T],E[T],result);
-         printf("rc(C4,P%d,%s,%d,%d)=%d\n",N[T],names[t2],V[T],E[T],result);
+         fprintf(fp,"rc(C4,P%d,%s,%d,%d)=%d\n",N[T],NAMES[t2],V[T],E[T],result);
+         printf("rc(C4,P%d,%s,%d,%d)=%d\n",N[T],NAMES[t2],V[T],E[T],result);
          printf("unique/total positions analysed: ");
          printf("%d %d\n",NUM_OF_UNIQ_POS,NUM_OF_ALL_POS);
          ++LINE_NUMBER;
@@ -374,3 +430,4 @@ int main(){
       fclose(fp);
    }
 }
+
