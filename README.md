@@ -7,10 +7,11 @@ https://arxiv.org/abs/2211.12204
 
 ### Contents
 
-The project contains two files:
+The project contains three files:
 
 - c4pn.cpp - source code,
-- BuilderStrategies.zip - generated output.
+- BuilderStrategies.zip - generated output,
+- results.txt - values of rc function.
 
 ### How to run
 
