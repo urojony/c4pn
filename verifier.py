@@ -47,7 +47,8 @@ def validateStrategy(G1):
     #checks validity of the strategy in the file
     #for the starting position G1 (pair of red and blue graphs)
     result=True
-    if G1['r'].number_of_edges()+G1['b'].number_of_edges()>=E:
+    numberOfEdges=G1['r'].number_of_edges()+G1['b'].number_of_edges()
+    if numberOfEdges>=E:
         print('Error: too many moves done by Builder')
         return False
     if len(G1['r'].nodes | G1['b'].nodes)>V:
@@ -61,6 +62,9 @@ def validateStrategy(G1):
         print(lineNum)
         print(G1['r'].adj,G2['r'].adj,G1['b'].adj,G2['b'].adj,sep='\n')
         return False
+    if not(set(G2['m'])  & (G1['r'].nodes | G1['b'].nodes)) and numberOfEdges>0:
+        print("Error: the winning move is breaking the connectivity rule.")
+        return False 
     if 'l' in G2:
         H2=sumgraphs(G2['r'],G2['b'])
         G3=text2graphs(fileLines[int(G2['l'])-1])
