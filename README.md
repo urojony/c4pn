@@ -30,3 +30,5 @@ The c4pn.cpp was tested on GCC 12.2.0 and the following commands were used.
 The verifier.py was tested on Python 3.8.10 with numpy 1.21.5 and networkx 3.1 and the following command was used.
 
 `python3 verifier.py`
+
+To run the verifier, the output files of c4pn.cpp should be in the folder from which the verifier is called.
